@@ -3,30 +3,29 @@ FROM openjdk:8u212-jre-alpine
 LABEL org.opencontainers.image.authors="Geoff Bourne <itzgeoff@gmail.com>"
 
 # upgrade all packages since alpine jre8 base image tops out at 8u212
-RUN apk -U --no-cache upgrade
+RUN apk -U --no-cache upgrade && \
+    apk add --no-cache -U \
+    openssl \
+    imagemagick \
+    lsof \
+    su-exec \
+    shadow \
+    bash \
+    curl iputils wget \
+    git \
+    jq \
+    mysql-client \
+    tzdata \
+    rsync \
+    nano \
+    sudo \
+    knock \
+    ttf-dejavu
 
-RUN apk add --no-cache -U \
-  openssl \
-  imagemagick \
-  lsof \
-  su-exec \
-  shadow \
-  bash \
-  curl iputils wget \
-  git \
-  jq \
-  mysql-client \
-  tzdata \
-  rsync \
-  nano \
-  sudo \
-  knock \
-  ttf-dejavu
-
-RUN addgroup -g 1000 minecraft \
-  && adduser -Ss /bin/false -u 1000 -G minecraft -h /home/minecraft minecraft \
-  && mkdir -m 777 /data \
-  && chown minecraft:minecraft /data /home/minecraft
+RUN addgroup -g 1000 minecraft && \
+    adduser -Ss /bin/false -u 1000 -G minecraft -h /home/minecraft minecraft && \
+    mkdir -m 777 /data && \
+    chown minecraft:minecraft /data /home/minecraft
 
 COPY files/sudoers* /etc/sudoers.d
 
@@ -43,24 +42,20 @@ ADD https://github.com/itzg/easy-add/releases/download/${EASY_ADD_VER}/easy-add_
 RUN chmod +x /usr/bin/easy-add
 
 RUN easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
-  --var version=1.2.0 --var app=restify --file {{.app}} \
-  --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
-
-RUN easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
- --var version=1.4.7 --var app=rcon-cli --file {{.app}} \
- --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
-
-RUN easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
- --var version=0.1.7 --var app=mc-monitor --file {{.app}} \
- --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
-
-RUN easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
- --var version=1.5.0 --var app=mc-server-runner --file {{.app}} \
- --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
-
-RUN easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
- --var version=0.1.1 --var app=maven-metadata-release --file {{.app}} \
- --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
+      --var version=1.2.0 --var app=restify --file {{.app}} \
+      --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz && \
+    easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
+      --var version=1.4.7 --var app=rcon-cli --file {{.app}} \
+      --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz && \
+    easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
+      --var version=0.1.7 --var app=mc-monitor --file {{.app}} \
+      --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz && \
+    easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
+      --var version=1.5.0 --var app=mc-server-runner --file {{.app}} \
+      --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz && \
+    easy-add --var os=${TARGETOS} --var arch=${TARGETARCH}${TARGETVARIANT} \
+      --var version=0.1.1 --var app=maven-metadata-release --file {{.app}} \
+      --from https://github.com/itzg/{{.app}}/releases/download/{{.version}}/{{.app}}_{{.version}}_{{.os}}_{{.arch}}.tar.gz
 
 COPY mcstatus /usr/local/bin
 
@@ -80,9 +75,11 @@ COPY start* /
 COPY health.sh /
 ADD files/autopause /autopause
 
-RUN dos2unix /start* && chmod +x /start*
-RUN dos2unix /health.sh && chmod +x /health.sh
-RUN dos2unix /autopause/* && chmod +x /autopause/*.sh
+RUN dos2unix /start* && chmod +x /start* && \
+    dos2unix /health.sh && chmod +x /health.sh && \
+    dos2unix /autopause/* && chmod +x /autopause/*.sh
+
+USER minecraft
 
 ENTRYPOINT [ "/start" ]
 HEALTHCHECK --start-period=1m CMD /health.sh
